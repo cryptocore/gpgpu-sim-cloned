@@ -66,10 +66,11 @@ import os
 import array
 import Tkinter as Tk
 import matplotlib
+import matplotlib as mpl
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-from matplotlib import mpl
+#from matplotlib import mpl
 from matplotlib.colors import colorConverter
 from matplotlib import pyplot
 import Pmw
