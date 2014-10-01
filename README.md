@@ -3,9 +3,9 @@ GPGPU-sim
 
 This repo was forked from git://dev.ece.ubc.ca/gpgpu-sim
 
-**upstream** branch tracks points to latest known state of git://dev.ece.ubc.ca/gpgpu-sim
-**master** branch contains general fixes and improvement on top of upstream
-**custom** branch adds specific features such as adding custom instructions
+**upstream** branch tracks points to latest known state of git://dev.ece.ubc.ca/gpgpu-sim  
+**master** branch contains general fixes and improvement on top of upstream  
+**custom** branch adds specific features such as adding custom instructions  
 
 ## Adding a custom ptx instruction:
 
