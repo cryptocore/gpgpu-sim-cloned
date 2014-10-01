@@ -37,6 +37,7 @@ Tex 6
 Nop 7
 Other 10
 */
+OP_DEF(CUSTOM_OP,custom_impl,"custom",1,1)
 OP_DEF(ABS_OP,abs_impl,"abs",1,1)
 OP_DEF(ADD_OP,add_impl,"add",1,1)
 OP_DEF(ADDP_OP,addp_impl,"addp",1,1)

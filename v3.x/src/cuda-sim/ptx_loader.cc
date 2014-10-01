@@ -29,6 +29,7 @@
 #include "ptx_ir.h"
 #include "cuda-sim.h"
 #include "ptx_parser.h"
+#include "substitutes.h"
 #include <unistd.h>
 #include <dirent.h>
 #include <fstream>
@@ -199,9 +200,31 @@ void gpgpu_ptxinfo_load_from_string( const char *p_for_info, unsigned source_num
     fd=mkstemp(fname2); 
     close(fd);
     char commandline2[4096];
-    snprintf(commandline2,4096,"cat %s | sed 's/.version 1.5/.version 1.4/' | sed 's/, texmode_independent//' | sed 's/\\(\\.extern \\.const\\[1\\] .b8 \\w\\+\\)\\[\\]/\\1\\[1\\]/' | sed 's/const\\[.\\]/const\\[0\\]/g' > %s", fname, fname2);
+
+    // Insert ptx stubs for custom instructions
+    snprintf(commandline2,4096,"cat %s", fname);
+    int remaining = 4095 - strlen("cat %s") - strlen(fname);
+    char command[256];
+    for (int i = 0 ; i < NUM_SUBSTS ; ++i) {
+      snprintf(command, 56," | sed 's/%s/g'",opcode_subst[i]);
+      strncat(commandline2, command, remaining);
+      remaining -= strlen(command);
+    }
+    snprintf(command, 56, " > %s && mv -f %s %s", fname2, fname2, fname);
+    strncat(commandline2, command, remaining);
     printf("Running: %s\n", commandline2);
     int result = system(commandline2);
+    if( result != 0 ) {
+       printf("GPGPU-Sim PTX: ERROR ** while loading PTX (a) %d\n", result);
+       printf("               Ensure you have write access to simulation directory\n");
+       printf("               and have \'cat\' and \'sed\' in your path.\n");
+       exit(1);
+    }
+    // end of custom instructions hack
+
+    snprintf(commandline2,4096,"cat %s | sed 's/.version 1.5/.version 1.4/' | sed 's/, texmode_independent//' | sed 's/\\(\\.extern \\.const\\[1\\] .b8 \\w\\+\\)\\[\\]/\\1\\[1\\]/' | sed 's/const\\[.\\]/const\\[0\\]/g' > %s", fname, fname2);
+    printf("Running: %s\n", commandline2);
+    result = system(commandline2);
     if( result != 0 ) {
        printf("GPGPU-Sim PTX: ERROR ** while loading PTX (a) %d\n", result);
        printf("               Ensure you have write access to simulation directory\n");

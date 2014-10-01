@@ -747,6 +747,11 @@ void addp_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    thread->set_operand_value(dst, data, i_type, thread, pI, overflow, carry  );
 }
 
+void custom_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
+{ 
+    // does absoultely nothing
+}
+
 void add_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
 { 
    ptx_reg_t src1_data, src2_data, data;

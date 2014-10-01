@@ -53,6 +53,7 @@ int ptx_error( const char *s );
 %x NOT_OPCODE
 %%
 
+custom TC; ptx_lval.int_value = CUSTOM_OP; return OPCODE;
 abs	TC; ptx_lval.int_value = ABS_OP; return OPCODE;
 add	TC; ptx_lval.int_value = ADD_OP; return OPCODE;
 addp	TC; ptx_lval.int_value = ADDP_OP; return OPCODE;
