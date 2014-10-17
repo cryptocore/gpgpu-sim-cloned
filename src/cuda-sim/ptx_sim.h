@@ -418,6 +418,9 @@ public:
    void or_reduction(unsigned ctaid, unsigned barid, bool value) {m_core->or_reduction(ctaid,barid,value);}
    void popc_reduction(unsigned ctaid, unsigned barid, bool value) {m_core->popc_reduction(ctaid,barid,value);}
 
+	//CARRY GETTER + SETTER
+	bool get_carry() { return m_carry; }
+	void set_carry(int carry) { m_carry = (carry != 0) ? true : false; }
 public:
    addr_t         m_last_effective_address;
    bool        m_branch_taken;
@@ -471,6 +474,9 @@ private:
    bool m_enable_debug_trace;
 
    std::stack<class operand_info, std::vector<operand_info> > m_breakaddrs;
+
+	//CARRY
+	bool m_carry;
 };
 
 addr_t generic_to_local( unsigned smid, unsigned hwtid, addr_t addr );

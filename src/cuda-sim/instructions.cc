@@ -365,6 +365,7 @@ void sign_extend( ptx_reg_t &data, unsigned src_size, const operand_info &dst )
 void ptx_thread_info::set_operand_value( const operand_info &dst, const ptx_reg_t &data, unsigned type, ptx_thread_info *thread, const ptx_instruction *pI, int overflow, int carry )
 {
     thread->set_operand_value( dst, data, type, thread, pI );
+	thread->set_carry(carry);
 
     if (dst.get_double_operand_type() == -2)
     {
@@ -814,7 +815,74 @@ void add_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    thread->set_operand_value(dst, data, i_type, thread, pI, overflow, carry  );
 }
 
-void addc_impl( const ptx_instruction *pI, ptx_thread_info *thread ) { inst_not_implemented(pI); }
+void addc_impl( const ptx_instruction *pI, ptx_thread_info *thread ) { 
+   ptx_reg_t src1_data, src2_data, data;
+   int overflow = 0;
+   int carry = 0;
+   // get carry in
+   int carry_in = (thread->get_carry()) ? 1 : 0;
+
+   const operand_info &dst  = pI->dst();  //get operand info of sources and destination 
+   const operand_info &src1 = pI->src1(); //use them to determine that they are of type 'register'
+   const operand_info &src2 = pI->src2();
+
+   unsigned i_type = pI->get_type();
+   src1_data = thread->get_operand_value(src1, dst, i_type, thread, 1);
+   src2_data = thread->get_operand_value(src2, dst, i_type, thread, 1);
+
+   unsigned rounding_mode = pI->rounding_mode();
+   int orig_rm = fegetround();
+   switch ( rounding_mode ) {
+   case RN_OPTION: break;
+   case RZ_OPTION: fesetround( FE_TOWARDZERO ); break;
+   default: assert(0); break;
+   }
+
+   //performs addition. Sets carry and overflow if needed.
+   switch ( i_type ) {
+   case S8_TYPE:
+      data.s64 = (src1_data.s64 & 0x0000000FF) + (src2_data.s64 & 0x0000000FF) + carry_in;
+      if(((src1_data.s64 & 0x80)-(src2_data.s64 & 0x80)) == 0) {overflow=((src1_data.s64 & 0x80)-(data.s64 & 0x80))==0?0:1; }
+      carry = (data.u64 & 0x000000100)>>8;
+      break;
+   case S16_TYPE:
+      data.s64 = (src1_data.s64 & 0x00000FFFF) + (src2_data.s64 & 0x00000FFFF) + carry_in;
+      if(((src1_data.s64 & 0x8000)-(src2_data.s64 & 0x8000)) == 0) {overflow=((src1_data.s64 & 0x8000)-(data.s64 & 0x8000))==0?0:1; }
+      carry = (data.u64 & 0x000010000)>>16;
+      break;
+   case S32_TYPE:
+      data.s64 = (src1_data.s64 & 0x0FFFFFFFF) + (src2_data.s64 & 0x0FFFFFFFF) + carry_in;
+      if(((src1_data.s64 & 0x80000000)-(src2_data.s64 & 0x80000000)) == 0) {overflow=((src1_data.s64 & 0x80000000)-(data.s64 & 0x80000000))==0?0:1; }
+      carry = (data.u64 & 0x100000000)>>32;
+      break;
+   case S64_TYPE:
+      data.s64 = src1_data.s64 + src2_data.s64 + carry_in;
+      break;
+   case U8_TYPE:
+      data.u64 = (src1_data.u64 & 0xFF) + (src2_data.u64 & 0xFF) + carry_in;
+      carry = (data.u64 & 0x100)>>8;
+      break;
+   case U16_TYPE:
+      data.u64 = (src1_data.u64 & 0xFFFF) + (src2_data.u64 & 0xFFFF) + carry_in;
+      carry = (data.u64 & 0x10000)>>16;
+      break;
+   case U32_TYPE:
+      data.u64 = (src1_data.u64 & 0xFFFFFFFF) + (src2_data.u64 & 0xFFFFFFFF) + carry_in;
+      carry = (data.u64 & 0x100000000)>>32;
+      break;
+   case U64_TYPE:
+      data.u64 = src1_data.u64 + src2_data.u64 + carry_in;
+      break;
+   case F16_TYPE: assert(0); break;
+   case F32_TYPE: data.f32 = src1_data.f32 + src2_data.f32 + carry_in; break;
+   case F64_TYPE: case FF64_TYPE: data.f64 = src1_data.f64 + src2_data.f64 + carry_in; break;
+   default: assert(0); break;
+   }
+   fesetround( orig_rm );
+
+   thread->set_operand_value(dst, data, i_type, thread, pI, overflow, carry  );
+
+}
 
 void and_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
 { 
